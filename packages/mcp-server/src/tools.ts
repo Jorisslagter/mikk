@@ -561,13 +561,14 @@ export function registerTools(server: McpServer, projectRoot: string) {
         async ({ name }) => {
             const { lock, staleness } = await loadContractAndLock(projectRoot)
 
+            const nameLower = name.toLowerCase()
             const matches = Object.values(lock.functions).filter(
-                f => f.name === name || f.name.endsWith(`.${name}`) || f.id.includes(name),
+                f => f.name.toLowerCase() === nameLower || f.name.toLowerCase().endsWith(`.${nameLower}`) || f.id.toLowerCase().includes(nameLower),
             )
 
             if (matches.length === 0) {
                 return {
-                    content: [{ type: 'text' as const, text: `No function matching "${name}" found.` }],
+                    content: [{ type: 'text' as const, text: `No function matching "${name}" found. Use mikk_search_functions to find the correct name.` }],
                     isError: true,
                 }
             }
@@ -859,8 +860,9 @@ export function registerTools(server: McpServer, projectRoot: string) {
         async ({ name }) => {
             const { lock, staleness } = await loadContractAndLock(projectRoot)
 
+            const nameLower = name.toLowerCase()
             const fn = Object.values(lock.functions).find(
-                f => f.name === name || f.name.endsWith(`.${name}`) || f.id.includes(name),
+                f => f.name.toLowerCase() === nameLower || f.name.toLowerCase().endsWith(`.${nameLower}`) || f.id.toLowerCase().includes(nameLower),
             )
 
             if (!fn) {
@@ -1145,8 +1147,9 @@ export function registerTools(server: McpServer, projectRoot: string) {
             const normalizedFile = file.replace(/\\/g, '/')
 
             for (const fnName of fnNames) {
+                const fnNameLower = fnName.toLowerCase()
                 const fn = Object.values(lock.functions).find(
-                    f => (f.name === fnName || f.name.endsWith(`.${fnName}`)) &&
+                    f => (f.name.toLowerCase() === fnNameLower || f.name.toLowerCase().endsWith(`.${fnNameLower}`)) &&
                         (f.file === normalizedFile || f.file.endsWith('/' + normalizedFile))
                 )
 
