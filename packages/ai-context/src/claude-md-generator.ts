@@ -47,6 +47,11 @@ export class ClaudeMdGenerator {
         sections.push(summary)
         usedTokens += countTokens(summary)
 
+        // --- MCP tool instructions (always included) ---
+        const mikkInstructions = this.generateMikkInstructions()
+        sections.push(mikkInstructions)
+        usedTokens += countTokens(mikkInstructions)
+
         // --- Tech stack & conventions (always included if detectable) ---
         const techSection = this.generateTechStackSection()
         if (techSection) {
@@ -129,6 +134,22 @@ export class ClaudeMdGenerator {
         }
 
         return sections.join('\n')
+    }
+
+    // ── MCP Tool Instructions ──────────────────────────────────────
+
+    private generateMikkInstructions(): string {
+        return `
+## Mikk MCP Tools — MANDATORY
+
+This project uses Mikk MCP tools for code exploration. You MUST prefer these over raw Explore agents, Grep, Glob, or Read when understanding code.
+
+**Before exploring code:** Call \`mikk_query_context\` with your question — it traces the dependency graph and returns relevant function bodies.
+**To find functions:** Call \`mikk_search_functions\` (by name) or \`mikk_semantic_search\` (by meaning).
+**To read a function:** Call \`mikk_get_function_detail\` — returns params, calls, calledBy, body, and error handling.
+**Before editing any file:** Call \`mikk_before_edit\` — checks blast radius and constraints.
+**After edits:** Call \`mikk_get_changes\` to verify drift.
+`
     }
 
     // ── Tier 1: Summary ───────────────────────────────────────────
