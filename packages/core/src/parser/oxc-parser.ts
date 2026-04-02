@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { parseSync } from 'oxc-parser';
 import { BaseParser } from './base-parser.js';
 import { OxcResolver } from './oxc-resolver.js';
 import { hashContent } from '../hash/file-hasher.js';
@@ -283,6 +282,7 @@ export class OxcParser extends BaseParser {
 
         let ast: any;
         try {
+            const { parseSync } = await import('oxc-parser');
             const result = parseSync(filePath, content, {
                 sourceType: 'module',
                 lang: isTS ? 'ts' : 'js',

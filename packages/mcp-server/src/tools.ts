@@ -75,18 +75,11 @@ const semanticSearchers = new Map<string, SemanticSearcher>()
 
 /** Quick-hash a file by reading first 8KB for fast drift detection */
 async function quickHashFile(filePath: string): Promise<string> {
-    let handle: Awaited<ReturnType<typeof fs.open>> | null = null
     try {
-        handle = await fs.open(filePath, 'r')
-        const buf = Buffer.alloc(8192)
-        const { bytesRead } = await handle.read(buf, 0, 8192, 0)
-        return createHash('sha256').update(buf.subarray(0, bytesRead)).digest('hex').slice(0, 16)
+        const content = await fs.readFile(filePath, 'utf-8')
+        return createHash('sha256').update(content).digest('hex')
     } catch {
         return 'unreadable'
-    } finally {
-        if (handle) {
-            try { await handle.close() } catch { /* best-effort close */ }
-        }
     }
 }
 
@@ -1034,7 +1027,7 @@ export function registerTools(server: McpServer, projectRoot: string) {
 
                 try {
                     const currentHash = await quickHashFile(absPath)
-                    const storedHash = fileInfo.hash?.slice(0, 16) ?? ''
+                    const storedHash = fileInfo.hash ?? ''
                     if (currentHash !== storedHash && storedHash !== '') {
                         modified.push(filePath)
                     }
@@ -1044,6 +1037,14 @@ export function registerTools(server: McpServer, projectRoot: string) {
             }
 
             // Check for new files not in the lock
+            // Build a set of relative paths from lock keys (which may be absolute)
+            const lockRelPaths = new Set(
+                Object.keys(lock.files).map(fp =>
+                    path.isAbsolute(fp)
+                        ? path.relative(projectRoot, fp).replace(/\\/g, '/')
+                        : fp,
+                ),
+            )
             try {
                 const srcDirs = ['src', 'lib', 'app', 'pages', 'components']
                 for (const dir of srcDirs) {
@@ -1053,7 +1054,7 @@ export function registerTools(server: McpServer, projectRoot: string) {
                         const files = await walkDir(dirPath, projectRoot)
                         if (files.length >= MAX_WALK_FILES) scanTruncated = true
                         for (const f of files) {
-                            if (!lock.files[f] && isSourceFile(f)) {
+                            if (!lockRelPaths.has(f) && isSourceFile(f)) {
                                 added.push(f)
                             }
                         }
